@@ -82,7 +82,7 @@ def register_user():
             return jsonify({'message': 'User registered successfully'}), 201
     else:
         return jsonify({'error': 'Username and password are required'}), 400
-# trying to save to git hub 
+# trying to save to git hub hope this works 
 # Endpoint for user login
 @app.route('/login', methods=['POST'])
 def login_user():
