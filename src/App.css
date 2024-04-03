@@ -28,6 +28,23 @@
   color: #61dafb;
 }
 
+.card-back {
+  display: none;
+}
+
+.card-inner.flipped .card-front {
+  display: none;
+}
+
+.card-inner.flipped .card-back {
+  display: block;
+}
+
+.flip-button {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px; /* Adjust margin as needed */
+}
 
 @keyframes App-logo-spin {
   from {
