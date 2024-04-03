@@ -68,23 +68,32 @@ function App() {
         </button>
       </div>
       <div className="card-rows d-flex flex-row flex-wrap">
-         {searchResults && currentCards.map((card) => (
-          <div className="card mb-3" style={{ maxWidth: '275px', marginRight: '2px' }} key={card.id}>
-            <img src={card.image_uris.png} className="card-img-top" alt={card.name} style={{maxWidth: '100%', height: 'auto'}}/>
-            <div className="card-body">
-              <h5 className="card-title">{card.name}</h5>
-              <p>Mana Cost: {card.mana_cost}</p>
-              <p>Type: {card.type_line}</p>
-              <p>Oracle Text: {card.oracle_text}</p>
-              <div className="d-flex justify-content-around">
-                  <button className="btn btn-success">Add to Deck</button>
-                  <button className="btn btn-info">Add to Wishlist</button>
-                  <button className="btn btn-warning">Add to Trades</button>
-                </div>
-              </div>
-            </div>
+  {searchResults && currentCards.map((card) => (
+    <div className="card mb-3" style={{ maxWidth: '275px', marginRight: '2px' }} key={card.id}>
+      {card.image_uris && card.image_uris.png && (
+        <img src={card.image_uris.png} className="card-img-top" alt={card.name} style={{ maxWidth: '100%', height: 'auto' }} />
+      )}
+      <div className="card-body">
+        <h5 className="card-title">{card.name}</h5>
+        <p>Mana Cost: {card.mana_cost}</p>
+        <p>Type: {card.type_line}</p>
+        <p>Oracle Text: {card.oracle_text}</p>
+        <div className="d-flex justify-content-around">
+          <button className="btn btn-success">Add to Deck</button>
+          <button className="btn btn-info">Add to Wishlist</button>
+          <button className="btn btn-warning">Add to Trades</button>
+        </div>
+        {card.card_faces && card.card_faces.map((face, index) => (
+          <div className="card-back" key={`${card.id}-face-${index}`}>
+            {face.image_uris && face.image_uris.png && (
+              <img src={face.image_uris.png} className="card-img-top" alt={card.name} />
+            )}
+          </div>
         ))}
       </div>
+    </div>
+  ))}
+</div>
       {searchResults.length > cardsPerPage && (
         <nav>
           <ul className="pagination justify-content-center">
