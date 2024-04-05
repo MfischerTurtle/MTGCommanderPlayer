@@ -22,7 +22,7 @@ def url_constructor(order=None, q=None, color=None, cmc=None, type=None, name=No
 
     if order: queryParams.append(f'order={order}')
     if q: queryParams.append(f'q={q}')
-    if color: queryParams.append(f'color={color}')
+    if color: queryParams.append(f'color={color}')  # Add color parameter
     if cmc: queryParams.append(f'cmc={cmc}')
     if type: queryParams.append(f'type={type}')
     if name: queryParams.append(f'name={name}')
@@ -33,6 +33,7 @@ def url_constructor(order=None, q=None, color=None, cmc=None, type=None, name=No
 # Function to fetch cards from Scryfall API
 def fetch_cards(api_url):
     try:
+        print("API URL:", api_url)  # Print out the API URL for debugging
         response = requests.get(api_url)
         data = response.json()
         return data.get('data', [])
@@ -44,21 +45,21 @@ def fetch_cards(api_url):
 @app.route('/search', methods=['GET'])
 def search_cards():
     print('Received search request')
-    query = request.args.get('q')
-    if query:
-        try:
-            api_url = url_constructor(q=query)
-            data = fetch_cards(api_url)
-            if data:
-                return jsonify(data), 200
-            else:
-                return jsonify({'error': 'Error fetching cards'}), 500
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
-    else:
-        return jsonify({'error': 'Search query is required'}), 400
+    query = request.args.get('q', default='')  # Make query parameter optional
+    colors = request.args.get('colors')
+    
+    if not query and not colors:  # If both query and color are not provided
+        return jsonify({'error': 'Search query or colors are required'}), 400
 
-# Other endpoints and existing code...
+    try:
+        api_url = url_constructor(q=query, color=colors)  # Pass color parameter to url_constructor function
+        data = fetch_cards(api_url)
+        if data:
+            return jsonify(data), 200
+        else:
+            return jsonify({'error': 'Error fetching cards'}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 # Endpoint for user registration

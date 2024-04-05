@@ -40,11 +40,7 @@
   display: block;
 }
 
-.flip-button {
-  display: flex;
-  justify-content: center;
-  margin-top: 10px; /* Adjust margin as needed */
-}
+
 
 @keyframes App-logo-spin {
   from {
