@@ -1,75 +1,195 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
+
+
 
 function App() {
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [highlightedPage, setHighlightedPage] = useState(1); 
   const cardsPerPage = 12;
   const [selectedColors, setSelectedColors] = useState([]);
   const [flippedCards, setFlippedCards] = useState(new Set());
   const [cmcValue, setCmcValue] = useState('');
+  const [selectedTypes, setSelectedTypes] = useState([]);
+  const [selectedSubtypes, setSelectedSubtypes] = useState([]); // Combined state for all subtype categories
+  const [subtypes, setSubtypes] = useState([]); // Combined array for all subtype categories
+  const [subtypeSearchInput, setSubtypeSearchInput] = useState('');
+  const [rulesTextSearchInput, setRulesTextSearchInput] = useState('');
 
+  
+
+  // Fetch and set data for each subtype category using separate useEffect hooks
+  useEffect(() => {
+    const fetchCreatureTypes = async () => {
+      try {
+        const response = await axios.get('https://api.scryfall.com/catalog/creature-types');
+        setSubtypes(prevState => [...prevState, ...response.data.data]); // Merge data into the combined array
+      } catch (error) {
+        console.error('Error fetching creature types:', error);
+      }
+    };
+    fetchCreatureTypes();
+  }, []);
+
+  useEffect(() => {
+    const fetchLandTypes = async () => {
+      try {
+        const response = await axios.get('https://api.scryfall.com/catalog/land-types');
+        setSubtypes(prevState => [...prevState, ...response.data.data]); // Merge data into the combined array
+      } catch (error) {
+        console.error('Error fetching land types:', error);
+      }
+    };
+    fetchLandTypes();
+  }, []);
+
+  useEffect(() => {
+    const fetchSpellTypes = async () => {
+      try {
+        const response = await axios.get('https://api.scryfall.com/catalog/spell-types');
+        setSubtypes(prevState => [...prevState, ...response.data.data]); // Merge data into the combined array
+      } catch (error) {
+        console.error('Error fetching spell types:', error);
+      }
+    };
+    fetchSpellTypes();
+  }, []);
+
+  useEffect(() => {
+    const fetchEnchantmentTypes = async () => {
+      try {
+        const response = await axios.get('https://api.scryfall.com/catalog/enchantment-types');
+        setSubtypes(prevState => [...prevState, ...response.data.data]); // Merge data into the combined array
+      } catch (error) {
+        console.error('Error fetching enchantment types:', error);
+      }
+    };
+    fetchEnchantmentTypes();
+  }, []);
+  
   const handleChange = (event) => {
     setQuery(event.target.value);
   };
 
-  const handleColorChange = (e) => {
-    const { value, checked } = e.target;
-    if (checked) {
-      setSelectedColors([...selectedColors, value]);
-    } else {
-      setSelectedColors(selectedColors.filter((color) => color !== value));
+  const handleSubtypeInputChange = (event) => {
+    const inputValue = event.target.value.toLowerCase();
+    setSubtypeSearchInput(inputValue);
+  
+    // Find the closest matching subtype
+    const closestMatch = subtypes.find(subtype => subtype.toLowerCase().startsWith(inputValue));
+  
+    // If a closest match is found, scroll to its position in the select area
+    if (closestMatch) {
+      const element = document.getElementById(closestMatch);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }
-    // Clear CMC value when color is changed
-    setCmcValue('');
+  };
+  
+  const handleSelectSubtype = (event) => {
+    const selectedSubtypes = Array.from(event.target.selectedOptions, option => option.value);
+    setSelectedSubtypes(selectedSubtypes);
+  };
+
+
+  const handleColorChange = (event) => {
+    const color = event.target.value;
+    if (selectedColors.includes(color)) {
+      setSelectedColors(selectedColors.filter((c) => c !== color));
+    } else {
+      setSelectedColors([...selectedColors, color]);
+    }
   };
 
   const handleCmcChange = (event) => {
     setCmcValue(event.target.value);
   };
 
+  const handleTypeChange = (event) => {
+    const type = event.target.value;
+    if (selectedTypes.includes(type)) {
+      setSelectedTypes(selectedTypes.filter((t) => t !== type));
+    } else {
+      setSelectedTypes([...selectedTypes, type]);
+    }
+  };
+
+  const clearAll = () => {
+    setQuery('');
+    setSelectedColors([]);
+    setCmcValue('');
+    setSelectedTypes([]);
+    setSelectedSubtypes([]);
+    setSubtypeSearchInput('');
+    setRulesTextSearchInput('');
+    setSearchResults([]); // Clear search results
+  };
+
+  const clearAllTypes = () => {
+    setSelectedTypes([]);
+    setSelectedSubtypes([]);
+  };
+
+  const clearSelectedType = (type) => {
+    setSelectedTypes(selectedTypes.filter((t) => t !== type));
+  };
+
+
+  const clearSelectedSubtype = (subtype) => {
+    setSelectedSubtypes(selectedSubtypes.filter((st) => st !== subtype));
+  };
+
   const handleSearch = async () => {
     try {
-      const encodedQuery = encodeURIComponent(query);
+      let requestUrl = 'https://api.scryfall.com/cards/search?q=';
+  
+      if (query) {
+        const encodedQuery = encodeURIComponent(query);
+        requestUrl += encodedQuery;
+      }
+  
       let colorQuery = '';
-  
       if (selectedColors.length > 0) {
-        const includedColorsQuery = selectedColors.map(color => `c:${color}`).join('+');
-        const excludedColorsQuery = ['W', 'U', 'B', 'R', 'G'].filter(color => !selectedColors.includes(color)).map(color => `-c:${color}`).join('+');
-        colorQuery = `${includedColorsQuery}+${excludedColorsQuery}`;
+        colorQuery = selectedColors.map((color) => `c:${color}`).join('+');
       }
   
-      let cmcQuery = '';
-      if (cmcValue !== '') {
-        cmcQuery = `cmc=${cmcValue}`;
+      const cmcQuery = cmcValue !== '' ? `cmc=${cmcValue}` : '';
+      const typeQuery = selectedTypes.map((type) => `t:${type}`).join('+');
+      const subtypeQuery = selectedSubtypes.map((subtype) => `t:${subtype}`).join('+');
+  
+      const excludedColorsQuery = ['W', 'U', 'B', 'R', 'G']
+        .filter(color => !selectedColors.includes(color))
+        .map(color => `-c:${color}`)
+        .join('+');
+  
+      if (colorQuery !== '' || cmcQuery !== '' || typeQuery !== '' || subtypeQuery !== '') {
+        const queryParams = [colorQuery, cmcQuery, typeQuery, subtypeQuery].filter(Boolean);
+        requestUrl += `+${queryParams.join('+')}`;
       }
   
-      // Construct the request URL based on provided parameters
-      let requestUrl = `https://api.scryfall.com/cards/search?q=${encodedQuery}`;
-      if (colorQuery !== '' || cmcQuery !== '') {
-        requestUrl += `+${colorQuery}`;
+      if (selectedColors.length > 0 && excludedColorsQuery !== '') {
+        requestUrl += `+${excludedColorsQuery}`;
       }
-      if (cmcQuery !== '') {
-        requestUrl += `&${cmcQuery}`;
+  
+      if (rulesTextSearchInput) {
+        const ruleTextQuery = `o:"${encodeURIComponent(rulesTextSearchInput)}"`;
+        requestUrl += `+${ruleTextQuery}`;
       }
-      console.log('Filtered search results:', filteredSearchResults); // Log filtered search results
-
-      console.log('CMC value:', cmcValue); // Log CMC value
-      console.log('Request URL:', requestUrl); // Log request URL
-      console.log('Request URL:', requestUrl);
-      
+  
       const response = await axios.get(requestUrl);
       setCurrentPage(1);
-      console.log('Received response:', response.data);
       setSearchResults(response.data);
-      console.log('Search results:', response.data.data);
     } catch (error) {
       console.error('Error searching cards:', error);
       setSearchResults([]);
     }
   };
+  
+
   const filterByCmc = (cards, targetCmc) => {
     // Check if cards is defined and is an array
     if (!Array.isArray(cards)) {
@@ -82,14 +202,14 @@ function App() {
         return card.cmc === targetCmc;
     });
 };
+
+
  
   const filterDuplicates = (cards) => {
     // Check if cards is not an array or is empty
     if (!Array.isArray(cards) || cards.length === 0) {
-        console.error('Error: Input is not a non-empty array');
         return [];
     }
-
     const seenArenaIds = new Set();
     return cards.filter((card) => {
         // If arena_id is undefined or null, use card name as a unique identifier
@@ -103,23 +223,17 @@ function App() {
 };
 
 const flipCard = (cardId) => {
-  console.log('Flipping card:', cardId);
   const cardIdParts = cardId.split("-");
   const cardIdPart = cardIdParts.slice(0, -1).join("-");
   const faceIndex = cardIdParts.slice(-1)[0];
-  console.log('Card ID Part:', cardIdPart, 'Face Index:', faceIndex);
-  
   const card = filteredSearchResults.find((c) => c.id === cardIdPart); // Find the card object from search results
-  console.log('Card:', card);
 
-  // Check if the card has two faces
   if (card && card.card_faces && card.card_faces.length === 2) {
     const newFlippedCards = new Set(flippedCards);
     const isFlipped = newFlippedCards.has(cardId);
     if (isFlipped) {
       newFlippedCards.delete(cardId);
     } else {
-      // Check if the opposite face is already flipped, if yes, flip it back
       const oppositeFaceIndex = faceIndex === '0' ? '1' : '0';
       const oppositeCardId = `${cardIdPart}-${oppositeFaceIndex}`;
       if (newFlippedCards.has(oppositeCardId)) {
@@ -127,30 +241,23 @@ const flipCard = (cardId) => {
       }
       newFlippedCards.add(cardId);
     }
-    console.log('Before flipping:', flippedCards);
-    setFlippedCards(newFlippedCards);
-    console.log('After flipping:', flippedCards);
+    setFlippedCards(newFlippedCards); 
   }
 };
 
-
-  const paginate = (pageNumber) => {
-    console.log("Pagination requested for page:", pageNumber);
-    setCurrentPage(pageNumber);
-  };
+const paginate = (pageNumber) => {
+  console.log("Pagination requested for page:", pageNumber);
+  setCurrentPage(pageNumber);
+  setHighlightedPage(pageNumber); // Highlight the clicked page
+};
   const filteredByCmc = filterByCmc(searchResults.data, parseInt(cmcValue));
-  console.log('Filtered by CMC:', filteredByCmc);
-
-  // Filter search results for duplicates
-  const filteredSearchResults = filterDuplicates(filteredByCmc.length > 0 ? filteredByCmc : searchResults.data);
-  console.log('Filtered search results:', filteredSearchResults);
-  // Filter duplicates first, then paginate
   
+  const filteredSearchResults = filterDuplicates(filteredByCmc.length > 0 ? filteredByCmc : searchResults.data);
 
   const indexOfLastCard = currentPage * cardsPerPage;
   const indexOfFirstCard = indexOfLastCard - cardsPerPage;
   const currentCards = filteredSearchResults.slice(indexOfFirstCard, indexOfLastCard);
-  console.log("Current page cards length:", currentCards.length);
+
 
   return (
     
@@ -222,8 +329,113 @@ const flipCard = (cardId) => {
             onChange={handleCmcChange}
           />
         </div>
-        <button className="btn btn-primary mt-2" onClick={handleSearch}>
+        <h4>Types</h4>
+        <select
+          multiple
+          className="form-select mb-3"
+          onChange={handleTypeChange}
+          value={selectedTypes}
+        >
+          <option value="Artifact">Artifact</option>
+          <option value="Basic">Basic</option>
+          <option value="Battle">Battle</option>
+          <option value="Conspiracy">Conspiracy</option>
+          <option value="Creature">Creature</option>
+          <option value="Dungeon">Dungeon</option>
+          <option value="Eaturecray">Eaturecray</option>
+          <option value="Enchantment">Enchantment</option>
+          <option value="Ever">Ever</option>
+          <option value="Host">Host</option>
+          <option value="Instant">Instant</option>
+          <option value="Legendary">Legendary</option>
+          <option value="Ongoing">Ongoing</option>
+          <option value="Phenomenon">Phenomenon</option>
+          <option value="Plane">Plane</option>
+          <option value="Planeswalker">Planeswalker</option>
+          <option value="Scariest">Scariest</option>
+          <option value="Scheme">Scheme</option>
+          <option value="See">See</option>
+          <option value="Snow">Snow</option>
+          <option value="Sorcery">Sorcery</option>
+          <option value="Tribal">Tribal</option>
+          <option value="Summon">Summon</option>
+          <option value="Vanguard">Vanguard</option>
+          <option value="World">World</option>
+          <option value="You'll">You'll</option>
+        </select>
+        <div>
+    {selectedTypes.map((type) => (
+        <span key={type} className="badge bg-primary me-2">
+            {type}
+            <button
+                type="button"
+                className="btn-close"
+                aria-label="Close"
+                onClick={() => clearSelectedType(type)}
+            ></button>
+        </span>
+    ))}
+    {selectedSubtypes.map((subtype) => (
+        <span key={subtype} className="badge bg-primary me-2">
+            {subtype}
+            <button
+                type="button"
+                className="btn-close"
+                aria-label="Close"
+                onClick={() => clearSelectedSubtype(subtype)}
+            ></button>
+        </span>
+    ))}
+</div>
+
+<div className="container mt-5">
+  <h4>Subtypes</h4>
+    {/* Input box for subtypes */}
+    <input
+  type="text"
+  className="form-control"
+  placeholder="Search for subtypes..."
+  value={subtypeSearchInput}
+  onChange={handleSubtypeInputChange}
+/>
+
+<select
+  multiple
+  className="form-select mb-3"
+  value={selectedSubtypes}
+  onChange={handleSelectSubtype}
+>
+  {[...new Set(subtypes.filter(subtype => subtype.toLowerCase().includes(subtypeSearchInput)))]
+    .map((subtype, index) => (
+      <option
+        key={`${subtype}-${index}`}
+        value={subtype}
+        id={subtype}
+      >
+        {subtype}
+      </option>
+    ))}
+</select>
+</div>
+
+<input
+  type="text"
+  value={rulesTextSearchInput}
+  onChange={(e) => setRulesTextSearchInput(e.target.value)}
+  placeholder="Enter rule text..."
+/>
+
+
+  
+        <button className="btn btn-primary mt-2 me-2" onClick={handleSearch}>
           Search
+        </button>
+        <button className="btn btn-secondary mt-2" onClick={clearAllTypes}>
+          Clear All Types
+        </button>
+
+        <button className="btn btn-warning mt-2" onClick={clearAll}>
+        Clear All
         </button>
       </div>
       <div className="card-rows d-flex flex-row flex-wrap">
@@ -348,19 +560,22 @@ const flipCard = (cardId) => {
   ))}
 </div>
 
-      {filteredSearchResults.length > cardsPerPage && (
-        <nav>
-          <ul className="pagination justify-content-center">
-            {[...Array(Math.ceil(filteredSearchResults.length / cardsPerPage)).keys()].map((pageNumber) => (
-              <li key={pageNumber} className="page-item">
-                <button onClick={() => paginate(pageNumber + 1)} className="page-link">
-                  {pageNumber + 1}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      )}
+{filteredSearchResults.length > cardsPerPage && (
+  <nav>
+    <ul className="pagination justify-content-center">
+      {[...Array(Math.ceil(filteredSearchResults.length / cardsPerPage)).keys()].map((pageNumber) => (
+        <li key={pageNumber} className="page-item">
+          <button 
+            onClick={() => paginate(pageNumber + 1)} 
+            className={`page-link ${highlightedPage === pageNumber + 1 ? 'highlighted' : ''}`} // Apply 'highlighted' class if current page
+          >
+            {pageNumber + 1}
+          </button>
+        </li>
+      ))}
+    </ul>
+  </nav>
+)}
     </div>
   );
 }

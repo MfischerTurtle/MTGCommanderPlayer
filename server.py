@@ -1,7 +1,9 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS  
+from flask_cors import CORS
 from pymongo import MongoClient
 import requests
+
+
 
 app = Flask(__name__)
 CORS(app)  # Initialize CORS
@@ -17,20 +19,20 @@ if 'MTGDeckBuilder' not in client.list_database_names():
 SCRYFALL_BASE_URL = 'https://api.scryfall.com/cards/search?'
 
 # Function to construct Scryfall API search URL
-def url_constructor(order=None, q=None, color=None, cmc=None, type=None, name=None):
+def url_constructor(order=None, q=None, color=None, cmc=None, type=None, name=None, subtype=None, creature_types=None, rule_text=None):
     queryParams = []
 
     if order: queryParams.append(f'order={order}')
     if q: queryParams.append(f'q={q}')
-    if color: queryParams.append(f'color={color}')  # Add color parameter
+    if color: queryParams.append(f'color={color}')
     if cmc: queryParams.append(f'cmc={cmc}')
     if type: queryParams.append(f'type={type}')
-    if name: queryParams.append(f'name={name}')
-
+    if creature_types: queryParams.extend([f't:{creature_type}' for creature_type in creature_types])
+    if rule_text: queryParams.append(f'o:~"{rule_text}"')  # Enclose rule text in double quotes
+    
     fullUrl = SCRYFALL_BASE_URL + '&'.join(queryParams)
     return fullUrl
 
-# Function to fetch cards from Scryfall API
 def fetch_cards(api_url):
     try:
         print("API URL:", api_url)  # Print out the API URL for debugging
@@ -41,18 +43,92 @@ def fetch_cards(api_url):
         print("Error fetching cards:", e)
         return None
 
+def fetch_creature_types():
+    try:
+        response = requests.get('https://api.scryfall.com/catalog/creature-types')
+        data = response.json()
+        creature_types = data.get('data', [])
+        return creature_types
+    except Exception as e:
+        print("Error fetching creature types:", e)
+        return []
+
+@app.route('/creature-types', methods=['GET'])
+def get_creature_types():
+    try:
+        creature_types = fetch_creature_types()
+        return jsonify(creature_types), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500 
+    
+def fetch_land_types():
+    try:
+        response = requests.get('https://api.scryfall.com/catalog/land-types')
+        data = response.json()
+        land_types = data.get('data', [])
+        return land_types
+    except Exception as e:
+        print("Error fetching land types:", e)
+        return []
+
+@app.route('/land-types', methods=['GET'])
+def get_land_types():
+    try:
+        land_types = fetch_land_types()
+        return jsonify(land_types), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+def fetch_enchantment_types():
+    try:
+        response = requests.get('https://api.scryfall.com/catalog/enchantment-types')
+        data = response.json()
+        enchantment_types = data.get('data', [])
+        return enchantment_types
+    except Exception as e:
+        print("Error fetching enchantment types:", e)
+        return []
+
+@app.route('/enchantment-types', methods=['GET'])
+def get_enchantment_types():
+    try:
+        enchantment_types = fetch_enchantment_types()
+        return jsonify(enchantment_types), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+def fetch_spell_types():
+    try:
+        response = requests.get('https://api.scryfall.com/catalog/spell-types')
+        data = response.json()
+        spell_types = data.get('data', [])
+        return spell_types
+    except Exception as e:
+        print("Error fetching spell types:", e)
+        return []
+
+@app.route('/spell-types', methods=['GET'])
+def get_spell_types():
+    try:
+        spell_types = fetch_spell_types()
+        return jsonify(spell_types), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
 # Endpoint for searching cards using Scryfall API
 @app.route('/search', methods=['GET'])
 def search_cards():
     print('Received search request')
     query = request.args.get('q', default='')  # Make query parameter optional
     colors = request.args.get('colors')
-    
-    if not query and not colors:  # If both query and color are not provided
-        return jsonify({'error': 'Search query or colors are required'}), 400
+    creature_types = request.args.getlist('creature_types')  # Get list of creature types
+    rule_text = request.args.get('rule_text')  # Get the rule text query parameter
+
+    if not query and not colors and not creature_types and not rule_text:  # If none of the parameters provided
+        return jsonify({'error': 'At least one of q, colors, creature_types, or rule_text are required'}), 400
 
     try:
-        api_url = url_constructor(q=query, color=colors)  # Pass color parameter to url_constructor function
+        api_url = url_constructor(q=query, color=colors, creature_types=creature_types, rule_text=rule_text)
         data = fetch_cards(api_url)
         if data:
             return jsonify(data), 200
@@ -60,7 +136,7 @@ def search_cards():
             return jsonify({'error': 'Error fetching cards'}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
+    
 
 # Endpoint for user registration
 @app.route('/register', methods=['POST'])
