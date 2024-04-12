@@ -217,6 +217,7 @@ def manage_wishlist():
             return jsonify({'message': 'Card added to wishlist successfully'}), 201
         else:
             return jsonify({'error': 'Username and card info are required'}), 400
+        
 
     # Add handling for PUT and DELETE requests similarly
 
