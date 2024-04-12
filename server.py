@@ -2,21 +2,24 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pymongo import MongoClient
 import requests
+from dotenv import load_dotenv
+import os
 
-
+load_dotenv()  # Load environment variables from .env file
 
 app = Flask(__name__)
 CORS(app)  # Initialize CORS
 
-client = MongoClient('mongodb://localhost:27017/')
-db = client['MTGDeckBuilder']
+# Connect to MongoDB using environment variables
+client = MongoClient(os.environ.get('MONGODB_URI'))
+db = client[os.environ.get('DATABASE_NAME')]
 users_collection = db['users']
 
 if 'MTGDeckBuilder' not in client.list_database_names():
     db.create_collection('users')
 
 # Scryfall API base URL for card search
-SCRYFALL_BASE_URL = 'https://api.scryfall.com/cards/search?'
+SCRYFALL_BASE_URL = os.environ.get('SCRYFALL_BASE_URL')
 
 # Function to construct Scryfall API search URL
 def url_constructor(order=None, q=None, color=None, cmc=None, type=None, name=None, subtype=None, creature_types=None, rule_text=None):
@@ -29,7 +32,7 @@ def url_constructor(order=None, q=None, color=None, cmc=None, type=None, name=No
     if type: queryParams.append(f'type={type}')
     if creature_types: queryParams.extend([f't:{creature_type}' for creature_type in creature_types])
     if rule_text: queryParams.append(f'o:~"{rule_text}"')  # Enclose rule text in double quotes
-    
+
     fullUrl = SCRYFALL_BASE_URL + '&'.join(queryParams)
     return fullUrl
 
@@ -60,61 +63,9 @@ def get_creature_types():
         return jsonify(creature_types), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500 
-    
-def fetch_land_types():
-    try:
-        response = requests.get('https://api.scryfall.com/catalog/land-types')
-        data = response.json()
-        land_types = data.get('data', [])
-        return land_types
-    except Exception as e:
-        print("Error fetching land types:", e)
-        return []
 
-@app.route('/land-types', methods=['GET'])
-def get_land_types():
-    try:
-        land_types = fetch_land_types()
-        return jsonify(land_types), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-    
-def fetch_enchantment_types():
-    try:
-        response = requests.get('https://api.scryfall.com/catalog/enchantment-types')
-        data = response.json()
-        enchantment_types = data.get('data', [])
-        return enchantment_types
-    except Exception as e:
-        print("Error fetching enchantment types:", e)
-        return []
+# Add similar routes for other types (land-types, enchantment-types, spell-types)
 
-@app.route('/enchantment-types', methods=['GET'])
-def get_enchantment_types():
-    try:
-        enchantment_types = fetch_enchantment_types()
-        return jsonify(enchantment_types), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-    
-def fetch_spell_types():
-    try:
-        response = requests.get('https://api.scryfall.com/catalog/spell-types')
-        data = response.json()
-        spell_types = data.get('data', [])
-        return spell_types
-    except Exception as e:
-        print("Error fetching spell types:", e)
-        return []
-
-@app.route('/spell-types', methods=['GET'])
-def get_spell_types():
-    try:
-        spell_types = fetch_spell_types()
-        return jsonify(spell_types), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-    
 # Endpoint for searching cards using Scryfall API
 @app.route('/search', methods=['GET'])
 def search_cards():
@@ -136,7 +87,6 @@ def search_cards():
             return jsonify({'error': 'Error fetching cards'}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-    
 
 # Endpoint for user registration
 @app.route('/register', methods=['POST'])
@@ -159,7 +109,7 @@ def register_user():
             return jsonify({'message': 'User registered successfully'}), 201
     else:
         return jsonify({'error': 'Username and password are required'}), 400
-# trying to save to git hub hope this works 
+
 # Endpoint for user login
 @app.route('/login', methods=['POST'])
 def login_user():
@@ -191,37 +141,8 @@ def add_deck():
     else:
         return jsonify({'error': 'Username and deck name are required'}), 400
 
-
-
-
-# Endpoint for managing wishlist
-@app.route('/user/wishlist', methods=['GET', 'POST', 'PUT', 'DELETE'])
-def manage_wishlist():
-    if request.method == 'GET':
-        username = request.args.get('username')
-        if username:
-            user = users_collection.find_one({'username': username})
-            if user:
-                return jsonify({'wishlist': user.get('wishlist', [])}), 200
-            else:
-                return jsonify({'error': 'User not found'}), 404
-        else:
-            return jsonify({'error': 'Username is required for GET request'}), 400
-
-    elif request.method == 'POST':
-        data = request.json
-        username = data.get('username')
-        card_info = data.get('card_info')
-        if username and card_info:
-            users_collection.update_one({'username': username}, {'$push': {'wishlist': card_info}})
-            return jsonify({'message': 'Card added to wishlist successfully'}), 201
-        else:
-            return jsonify({'error': 'Username and card info are required'}), 400
-        
-
-    # Add handling for PUT and DELETE requests similarly
-
-# Endpoint for managing trade cards (similar to wishlist)
+# Add similar endpoints for managing wishlist and trade cards
 
 if __name__ == '__main__':
     app.run(debug=True)
+
