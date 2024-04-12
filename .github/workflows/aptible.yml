@@ -20,3 +20,5 @@ jobs:
         environment: mtgplayer
         username: ${{ secrets.m.rfischer5235@gmail.com }}
         password: ${{ secrets.DasBears5235 }}
+         app: mtgplayer
+          environment: mtgplayer
