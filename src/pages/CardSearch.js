@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../../src/App.css';
 
-
+const BASE_URL = process.env.REACT_APP_SCRYFALL_BASE_URL;
 
 function CardSearch() {
   const [query, setQuery] = useState('');
@@ -25,7 +25,7 @@ function CardSearch() {
   useEffect(() => {
     const fetchCreatureTypes = async () => {
       try {
-        const response = await axios.get('https://api.scryfall.com/catalog/creature-types');
+        const response = await axios.get(`${BASE_URL}/catalog/creature-types`);
         setSubtypes(prevState => [...prevState, ...response.data.data]); // Merge data into the combined array
       } catch (error) {
         console.error('Error fetching creature types:', error);
@@ -37,7 +37,7 @@ function CardSearch() {
   useEffect(() => {
     const fetchLandTypes = async () => {
       try {
-        const response = await axios.get('https://api.scryfall.com/catalog/land-types');
+        const response = await axios.get(`${BASE_URL}/catalog/land-types`);
         setSubtypes(prevState => [...prevState, ...response.data.data]); // Merge data into the combined array
       } catch (error) {
         console.error('Error fetching land types:', error);
@@ -49,7 +49,7 @@ function CardSearch() {
   useEffect(() => {
     const fetchSpellTypes = async () => {
       try {
-        const response = await axios.get('https://api.scryfall.com/catalog/spell-types');
+        const response = await axios.get(`${BASE_URL}/catalog/spell-types`);
         setSubtypes(prevState => [...prevState, ...response.data.data]); // Merge data into the combined array
       } catch (error) {
         console.error('Error fetching spell types:', error);
@@ -61,7 +61,7 @@ function CardSearch() {
   useEffect(() => {
     const fetchEnchantmentTypes = async () => {
       try {
-        const response = await axios.get('https://api.scryfall.com/catalog/enchantment-types');
+        const response = await axios.get(`${BASE_URL}/catalog/enchantment-types`);
         setSubtypes(prevState => [...prevState, ...response.data.data]); // Merge data into the combined array
       } catch (error) {
         console.error('Error fetching enchantment types:', error);
@@ -145,7 +145,7 @@ function CardSearch() {
 
   const handleSearch = async () => {
     try {
-      let requestUrl = 'https://api.scryfall.com/cards/search?q=';
+      let requestUrl = `${BASE_URL}q=`;
   
       if (query) {
         const encodedQuery = encodeURIComponent(query);
