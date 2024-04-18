@@ -1,14 +1,21 @@
-from flask import Flask, request, jsonify, session
+from flask import Flask, request, jsonify, session, make_response
 from flask_cors import CORS
 from pymongo import MongoClient
-import requests
 from dotenv import load_dotenv
+from functools import wraps
+import jwt
+import datetime
+import requests
 import os
+
+
 
 load_dotenv()  # Load environment variables from .env file
 
 app = Flask(__name__)
-CORS(app)  # Initialize CORS
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})  # Initialize CORS
+
+
 
 # Determine MongoDB URI based on the environment
 if os.environ.get('FLASK_ENV') == 'development':
@@ -25,7 +32,7 @@ try:
 except Exception as e:
     print("Error connecting to MongoDB:", e)
 
-app.secret_key = os.urandom(24)
+app.secret_key = os.getenv('SECRET_KEY')
 
 # Scryfall API base URL for card search
 SCRYFALL_BASE_URL = os.environ.get('SCRYFALL_BASE_URL')
@@ -47,6 +54,34 @@ def url_constructor(order=None, q=None, color=None, cmc=None, types=None, creatu
 
     fullUrl = SCRYFALL_BASE_URL + '&'.join(queryParams)
     return fullUrl
+
+
+def generate_token(username):
+    # Define token expiration time (e.g., 1 hour from now)
+    expiration_time = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)
+    payload = {
+        'username': username,
+        'exp': expiration_time
+    }
+    token = jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
+    return token
+
+
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = request.headers.get('Authorization')
+        if not token:
+            return jsonify({'error': 'Token is missing'}), 401
+        try:
+            data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+            current_user = data['username']
+        except jwt.ExpiredSignatureError:
+            return jsonify({'error': 'Token has expired'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'error': 'Invalid token'}), 401
+        return f(current_user, *args, **kwargs)
+    return decorated
 
 
 def fetch_cards(api_url):
@@ -175,14 +210,34 @@ def register_user():
             return jsonify({'message': 'User registered successfully'}), 201
     else:
         return jsonify({'error': 'Username and password are required'}), 400
-# trying to save to git hub hope this works 
-# Endpoint for user login
+
+def login_required(func):
+    @wraps(func)
+    def decorated_function(*args, **kwargs):
+        token = request.headers.get('Authorization')
+        if not token:
+            return jsonify({'message': 'Missing token'}), 401
+        try:
+            payload = jwt.decode(token.split()[1], app.config['SECRET_KEY'], algorithms=['HS256'])
+        except jwt.ExpiredSignatureError:
+            return jsonify({'message': 'Token expired'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'message': 'Invalid token'}), 401
+
+        return func(*args, **kwargs)
+
+    return decorated_function
+
 @app.route('/check-login', methods=['GET'])
+@login_required
 def check_login():
-    if 'username' in session:  # Check if username is stored in session (indicating user is logged in)
-        return jsonify({'isLoggedIn': True}), 200
-    else:
-        return jsonify({'isLoggedIn': False}), 200
+    return jsonify({'isLoggedIn': True}), 200
+
+    
+@app.route('/protected-route')
+@token_required
+def protected_route(current_user):
+    return jsonify({'message': f'Hello, {current_user}! This is a protected route.'}), 200
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -192,8 +247,8 @@ def login():
     if username and password:
         user = users_collection.find_one({'username': username, 'password': password})
         if user:
-            session['username'] = username  # Store username in session upon successful login
-            return jsonify({'message': 'Login successful'}), 200
+            token = generate_token(username)
+            return jsonify({'token': token}), 200  # Return token instead of message
         else:
             return jsonify({'error': 'Invalid username or password'}), 401
     else:
@@ -204,6 +259,49 @@ def logout():
     session.pop('username', None)  # Remove username from session upon logout
     return jsonify({'message': 'Logout successful'}), 200
 # Endpoint for adding a deck
+
+@app.route('/user/profile', methods=['PUT'])
+def update_profile():
+    data = request.json
+    username = data.get('username')
+    bio = data.get('bio')
+    profile_picture = data.get('profile_picture')
+    social_media = data.get('social_media')
+    
+    if username:
+        try:
+            # Update user profile in the database
+            users_collection.update_one({'username': username}, {'$set': {'bio': bio, 'profile_picture': profile_picture, 'social_media': social_media}})
+            return jsonify({'message': 'Profile updated successfully'}), 200
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    else:
+        return jsonify({'error': 'Username is required'}), 400
+    
+@app.route('/user/<username>', methods=['GET'])
+def get_user_profile(username):
+    try:
+        user = users_collection.find_one({'username': username})
+        if user:
+            # Construct the user profile data
+            user_profile = {
+                '_id': str(user['_id']),  # Convert ObjectId to string
+                'username': user['username'],
+                'email': user.get('email', ''),  # Optional field
+                'bio': user.get('bio', ''),  # Optional field
+                'decks': user.get('decks', []),
+                'password': user['password'],
+                'profile_picture': user.get('profile_picture', ''),  # Optional field
+                'social_media': user.get('social_media', {}),
+                'trade_cards': user.get('trade_cards', []),
+                'wishlist': user.get('wishlist', [])
+            }
+            return jsonify(user_profile), 200
+        else:
+            return jsonify({'error': 'User not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
 @app.route('/user/deck', methods=['POST'])
 def add_deck():
     data = request.json
@@ -218,9 +316,6 @@ def add_deck():
             return jsonify({'error': 'User not found'}), 404
     else:
         return jsonify({'error': 'Username and deck name are required'}), 400
-
-
-
 
 # Endpoint for managing wishlist
 @app.route('/user/wishlist', methods=['GET', 'POST', 'PUT', 'DELETE'])

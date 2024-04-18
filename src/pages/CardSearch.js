@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useContext ,useState, useEffect } from 'react';
 import axios from 'axios';
 import '../../src/App.css';
+import AuthContext from '../utils/AuthContext'
 
 const BASE_URL = process.env.REACT_APP_SCRYFALL_BASE_URL;
 const SUBTYPE_URL = process.env.REACT_APP_SCRYFALL_SUBTYPE_URL
+
 
 function CardSearch() {
   const [query, setQuery] = useState('');
@@ -19,7 +21,8 @@ function CardSearch() {
   const [subtypes, setSubtypes] = useState([]);
   const [subtypeSearchInput, setSubtypeSearchInput] = useState('');
   const [rulesTextSearchInput, setRulesTextSearchInput] = useState('');
-
+  const { isLoggedIn } = useContext(AuthContext);
+  
   
 
 
@@ -251,6 +254,19 @@ const paginate = (pageNumber) => {
   const indexOfLastCard = currentPage * cardsPerPage;
   const indexOfFirstCard = indexOfLastCard - cardsPerPage;
   const currentCards = filteredSearchResults.slice(indexOfFirstCard, indexOfLastCard);
+
+  const renderActionButton = () => {
+    if (isLoggedIn) {
+      return (
+        <div className="d-flex justify-content-around">
+          <button className="btn btn-success">Add to Deck</button>
+          <button className="btn btn-info">Add to Wishlist</button>
+          <button className="btn btn-warning">Add to Trades</button>
+        </div>
+      );
+    }
+    return null; // If user is not logged in, don't render the buttons
+  };
 
 
   return (
@@ -545,11 +561,9 @@ const paginate = (pageNumber) => {
             </div>
           </div>
         )}
-        <div className="d-flex justify-content-around">
-          <button className="btn btn-success">Add to Deck</button>
-          <button className="btn btn-info">Add to Wishlist</button>
-          <button className="btn btn-warning">Add to Trades</button>
-        </div>
+         <div className="d-flex justify-content-around">
+              {renderActionButton()}
+            </div>
       </div>
     </div>
   ))}

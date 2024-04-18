@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { storeTokenInSession, clearTokenFromSession } from '../utils/tokenUtils';
 import '../../src/App.css'; 
 
 const BASE_URL = process.env.REACT_APP_BASE_URL;
@@ -12,24 +13,37 @@ const Header = () => {
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
+  const checkLoginStatus = async () => {
+    try {
+      const token = sessionStorage.getItem('token'); // Retrieve the token from session storage
+      console.log('Retrieved token:', token); // Log the retrieved token
+  
+      const response = await axios.get(`${BASE_URL}/check-login`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // Include the token in the request headers
+        },
+      });
+      
+      setIsLoggedIn(response.data.isLoggedIn);
+    } catch (error) {
+      console.error('this didnt work:', error);
+    }
+  };
+  
   useEffect(() => {
-    const checkLoginStatus = async () => {
-      try {
-        const response = await axios.get(`${BASE_URL}/check-login`);
-        setIsLoggedIn(response.data.isLoggedIn);
-      } catch (error) {
-        console.error('Error checking login status:', error);
-      }
-    };
-
     checkLoginStatus();
   }, []);
 
   const handleLogout = async () => {
     try {
+      // Make a request to the logout endpoint (if needed)
       await axios.post(`${BASE_URL}/logout`);
-      setIsLoggedIn(false); 
-     
+  
+      // Clear the token from session storage
+      clearTokenFromSession();
+  
+      // Update the state to reflect logged out state
+      setIsLoggedIn(false); // Assuming setIsLoggedIn is a state updater function
     } catch (error) {
       console.error('Error logging out:', error);
       setErrorMessage('Error logging out');
@@ -46,15 +60,25 @@ const Header = () => {
         username: username,
         password: password
       });
-      console.log(response.data.message);
-      setIsLoggedIn(true); 
-      setShowModal(false); 
-      
+      console.log('Login response:', response); // Log the response object
+      if (response && response.data && response.data.token) {
+        console.log('Login successful'); 
+        setIsLoggedIn(true); 
+        setShowModal(false); 
+        storeTokenInSession(response.data.token); // Store the token in session storage
+        console.log('Token stored in session:', response.data.token); // Log the token
+        // Redirect to profile page with the username
+        window.location.href = `/profile/${username}`;
+      } else {
+        console.error('Login failed:', response); // Log the response if it doesn't contain the expected data
+        setErrorMessage('Login failed. Please try again.'); // Set a generic error message
+      }
     } catch (error) {
       console.error('Error logging in:', error);
       setErrorMessage(error.response.data.error);
     }
   };
+  
 
   return (
     <header>
@@ -90,6 +114,7 @@ const Header = () => {
         </div>
       )}
     </header>
+    
   );
 };
 
