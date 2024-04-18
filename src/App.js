@@ -1,19 +1,21 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Header from './components/Header';
 import Home from './pages/HomePage'; // Update import path
 import CardSearch from './pages/CardSearch'; // Update import path
 import SignUp from './pages/signUp';
-import Profile from './pages/Profile'
+import Profile from './pages/Profile';
 
 const AppRouter = () => {
   return (
     <Router>
+      <Header /> {/* Include the header component outside of the Routes */}
       <Routes>
-        <Route exact path="/" element={<Home />} /> {/* Use 'element' prop instead of 'component' */}
+        <Route path="/" element={<Home />} /> {/* Use 'element' prop instead of 'component' */}
         <Route path="/search" element={<CardSearch />} />
         <Route path="/signup" element={<SignUp />} /> {/* Use 'element' prop instead of 'component' */}
         <Route path="/profile/:username" element={<Profile />} />
-       </Routes>
+      </Routes>
     </Router>
   );
 };

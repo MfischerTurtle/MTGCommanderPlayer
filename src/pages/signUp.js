@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:5000'; // Replace this with your backend URL
+let BASE_URL = process.env.REACT_APP_BASE_URL;
 
+if (process.env.NODE_ENV === 'production') {
+ 
+  BASE_URL = 'http://app-71716.on-aptible.com/'; 
+}; 
 const Register = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -14,11 +18,11 @@ const Register = () => {
         username: username,
         password: password
       });
-      console.log(response.data.message); // Output success message
-      // Optionally, you can redirect the user to another page after successful registration
+      console.log(response.data.message); 
     } catch (error) {
       console.error('Error registering user:', error);
-      setErrorMessage(error.response.data.error);
+      const errorMessage = error.response?.data?.error || 'An unknown error occurred';
+      setErrorMessage(errorMessage);
     }
   };
 
@@ -33,41 +37,11 @@ const Register = () => {
   );
 };
 
-const Login = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-
-  const handleLogin = async () => {
-    try {
-      const response = await axios.post(`${BASE_URL}/login`, {
-        username: username,
-        password: password
-      });
-      console.log(response.data.message); // Output success message
-      // Optionally, you can redirect the user to another page after successful login
-    } catch (error) {
-      console.error('Error logging in:', error);
-      setErrorMessage(error.response.data.error);
-    }
-  };
-
-  return (
-    <div>
-      <h2>Login</h2>
-      {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
-      <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
-      <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-      <button onClick={handleLogin}>Login</button>
-    </div>
-  );
-};
 
 const SignUp = () => {
   return (
     <div>
       <Register />
-      <Login />
     </div>
   );
 };

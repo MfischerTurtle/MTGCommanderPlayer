@@ -53,15 +53,15 @@ const ProfilePage = ({ username }) => {
 };
 
 const DecksSection = ({ username }) => {
-  // Implement fetching and displaying decks
+  
 };
 
 const WishlistSection = ({ username }) => {
-  // Implement fetching and displaying wishlist
+ 
 };
 
 const TradesSection = ({ username }) => {
-  // Implement fetching and displaying trades
+
 };
 
 export default ProfilePage;

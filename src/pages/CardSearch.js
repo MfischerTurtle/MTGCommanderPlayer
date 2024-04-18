@@ -3,6 +3,7 @@ import axios from 'axios';
 import '../../src/App.css';
 
 const BASE_URL = process.env.REACT_APP_SCRYFALL_BASE_URL;
+const SUBTYPE_URL = process.env.REACT_APP_SCRYFALL_SUBTYPE_URL
 
 function CardSearch() {
   const [query, setQuery] = useState('');
@@ -14,19 +15,19 @@ function CardSearch() {
   const [flippedCards, setFlippedCards] = useState(new Set());
   const [cmcValue, setCmcValue] = useState('');
   const [selectedTypes, setSelectedTypes] = useState([]);
-  const [selectedSubtypes, setSelectedSubtypes] = useState([]); // Combined state for all subtype categories
-  const [subtypes, setSubtypes] = useState([]); // Combined array for all subtype categories
+  const [selectedSubtypes, setSelectedSubtypes] = useState([]); 
+  const [subtypes, setSubtypes] = useState([]);
   const [subtypeSearchInput, setSubtypeSearchInput] = useState('');
   const [rulesTextSearchInput, setRulesTextSearchInput] = useState('');
 
   
 
-  // Fetch and set data for each subtype category using separate useEffect hooks
+
   useEffect(() => {
     const fetchCreatureTypes = async () => {
       try {
-        const response = await axios.get(`${BASE_URL}/catalog/creature-types`);
-        setSubtypes(prevState => [...prevState, ...response.data.data]); // Merge data into the combined array
+        const response = await axios.get(`${SUBTYPE_URL}creature-types`);
+        setSubtypes(prevState => [...prevState, ...response.data.data]); 
       } catch (error) {
         console.error('Error fetching creature types:', error);
       }
@@ -37,8 +38,8 @@ function CardSearch() {
   useEffect(() => {
     const fetchLandTypes = async () => {
       try {
-        const response = await axios.get(`${BASE_URL}/catalog/land-types`);
-        setSubtypes(prevState => [...prevState, ...response.data.data]); // Merge data into the combined array
+        const response = await axios.get(`${SUBTYPE_URL}land-types`);
+        setSubtypes(prevState => [...prevState, ...response.data.data]); 
       } catch (error) {
         console.error('Error fetching land types:', error);
       }
@@ -49,8 +50,8 @@ function CardSearch() {
   useEffect(() => {
     const fetchSpellTypes = async () => {
       try {
-        const response = await axios.get(`${BASE_URL}/catalog/spell-types`);
-        setSubtypes(prevState => [...prevState, ...response.data.data]); // Merge data into the combined array
+        const response = await axios.get(`${SUBTYPE_URL}spell-types`);
+        setSubtypes(prevState => [...prevState, ...response.data.data]); 
       } catch (error) {
         console.error('Error fetching spell types:', error);
       }
@@ -61,8 +62,8 @@ function CardSearch() {
   useEffect(() => {
     const fetchEnchantmentTypes = async () => {
       try {
-        const response = await axios.get(`${BASE_URL}/catalog/enchantment-types`);
-        setSubtypes(prevState => [...prevState, ...response.data.data]); // Merge data into the combined array
+        const response = await axios.get(`${SUBTYPE_URL}enchantment-types`);
+        setSubtypes(prevState => [...prevState, ...response.data.data]); 
       } catch (error) {
         console.error('Error fetching enchantment types:', error);
       }
@@ -78,10 +79,8 @@ function CardSearch() {
     const inputValue = event.target.value.toLowerCase();
     setSubtypeSearchInput(inputValue);
   
-    // Find the closest matching subtype
     const closestMatch = subtypes.find(subtype => subtype.toLowerCase().startsWith(inputValue));
-  
-    // If a closest match is found, scroll to its position in the select area
+
     if (closestMatch) {
       const element = document.getElementById(closestMatch);
       if (element) {
@@ -94,7 +93,6 @@ function CardSearch() {
     const selectedSubtypes = Array.from(event.target.selectedOptions, option => option.value);
     setSelectedSubtypes(selectedSubtypes);
   };
-
 
   const handleColorChange = (event) => {
     const color = event.target.value;
@@ -126,7 +124,7 @@ function CardSearch() {
     setSelectedSubtypes([]);
     setSubtypeSearchInput('');
     setRulesTextSearchInput('');
-    setSearchResults([]); // Clear search results
+    setSearchResults([]); 
   };
 
   const clearAllTypes = () => {
@@ -191,14 +189,12 @@ function CardSearch() {
   
 
   const filterByCmc = (cards, targetCmc) => {
-    // Check if cards is defined and is an array
+   
     if (!Array.isArray(cards)) {
-        console.error('Error: Input is not an array');
         return [];
     }
 
     return cards.filter((card) => {
-        // Check if the card's cmc matches the target cmc
         return card.cmc === targetCmc;
     });
 };
@@ -206,13 +202,11 @@ function CardSearch() {
 
  
   const filterDuplicates = (cards) => {
-    // Check if cards is not an array or is empty
     if (!Array.isArray(cards) || cards.length === 0) {
         return [];
     }
     const seenArenaIds = new Set();
     return cards.filter((card) => {
-        // If arena_id is undefined or null, use card name as a unique identifier
         const uniqueIdentifier = card.arena_id ? card.arena_id : card.name;
         if (!seenArenaIds.has(uniqueIdentifier)) {
             seenArenaIds.add(uniqueIdentifier);
@@ -226,7 +220,7 @@ const flipCard = (cardId) => {
   const cardIdParts = cardId.split("-");
   const cardIdPart = cardIdParts.slice(0, -1).join("-");
   const faceIndex = cardIdParts.slice(-1)[0];
-  const card = filteredSearchResults.find((c) => c.id === cardIdPart); // Find the card object from search results
+  const card = filteredSearchResults.find((c) => c.id === cardIdPart); 
 
   if (card && card.card_faces && card.card_faces.length === 2) {
     const newFlippedCards = new Set(flippedCards);
@@ -248,7 +242,7 @@ const flipCard = (cardId) => {
 const paginate = (pageNumber) => {
   console.log("Pagination requested for page:", pageNumber);
   setCurrentPage(pageNumber);
-  setHighlightedPage(pageNumber); // Highlight the clicked page
+  setHighlightedPage(pageNumber);
 };
   const filteredByCmc = filterByCmc(searchResults.data, parseInt(cmcValue));
   
@@ -392,7 +386,6 @@ const paginate = (pageNumber) => {
 
 <div className="container mt-5">
   <h4>Subtypes</h4>
-    {/* Input box for subtypes */}
     <input
   type="text"
   className="form-control"
