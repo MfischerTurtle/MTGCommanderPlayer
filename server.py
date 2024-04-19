@@ -13,8 +13,7 @@ import os
 load_dotenv()  # Load environment variables from .env file
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})  # Initialize CORS
-
+CORS(app)
 
 
 # Determine MongoDB URI based on the environment

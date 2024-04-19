@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-let BASE_URL = 'http://app-71716.on-aptible.com/'; 
+let BASE_URL = process.env.APTIBLE_APP_BASE_URL; 
 
 if (process.env.NODE_ENV === 'development') {
  
