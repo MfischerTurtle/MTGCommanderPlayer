@@ -8,7 +8,7 @@ const Profile = () => {
   const { username } = useParams();
   const [userInfo, setUserInfo] = useState(null);
   const [bio, setBio] = useState('');
-  const [profilePicture, setProfilePicture] = useState(null);
+
   const [socialMedia, setSocialMedia] = useState({
     facebook: '',
     twitter: '',
@@ -42,10 +42,7 @@ const Profile = () => {
     }
   };
 
-  const handleProfilePictureChange = (event) => {
-    const file = event.target.files[0];
-    setProfilePicture(file);
-  };
+ 
 
   const handleSocialMediaChange = (event) => {
     const { name, value } = event.target;
@@ -68,10 +65,7 @@ const Profile = () => {
             <textarea value={bio} onChange={(e) => setBio(e.target.value)} />
             <button onClick={handleBioChange}>Save</button>
           </div>
-          <div>
-            <strong>Profile Picture:</strong>{' '}
-            <input type="file" onChange={handleProfilePictureChange} />
-          </div>
+          
           <div>
             <strong>Social Media:</strong>
             <input type="text" name="facebook" placeholder="Facebook" value={socialMedia?.facebook || ''} onChange={handleSocialMediaChange} />
