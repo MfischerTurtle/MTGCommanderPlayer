@@ -4,7 +4,13 @@ import axios from 'axios';
 import { storeTokenInSession, clearTokenFromSession } from '../utils/tokenUtils';
 import '../../src/App.css'; 
 
-const BASE_URL = process.env.REACT_APP_BASE_URL;
+let BASE_URL = process.env.REACT_APP_BASE_URL; 
+
+if (process.env.NODE_ENV === 'development') {
+  BASE_URL = process.env.REACT_APP_BASE_URL;
+} else {
+  BASE_URL = process.env.APTIBLE_APP_BASE_URL;
+}
 
 const Header = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);

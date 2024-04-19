@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-let BASE_URL = process.env.REACT_APP_BASE_URL;
+let BASE_URL = 'http://app-71716.on-aptible.com/'; 
 
-if (process.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV === 'development') {
  
-  BASE_URL = 'http://app-71716.on-aptible.com/'; 
+BASE_URL = process.env.REACT_APP_BASE_URL;
+  
 }; 
 const Register = () => {
   const [username, setUsername] = useState('');
