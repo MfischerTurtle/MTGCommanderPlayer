@@ -17,13 +17,12 @@ CORS(app)
 
 
 
-print("FLASK_ENV:", os.environ.get('FLASK_ENV'))
 if os.environ.get('FLASK_ENV') == 'development':
     mongodb_uri = os.environ.get('MONGODB_URI')
-    print("Using MongoDB URI:", mongodb_uri)
+    database_name = os.environ.get('DATABASE_NAME')  # Use a different environment variable for local database name
 else:
     mongodb_uri = os.environ.get('APTIBLE_MONGODB_URI')
-    print("Using Aptible MongoDB URI:", mongodb_uri)
+    database_name = os.environ.get('APTIBLE_DATABASE_NAME')  
 
 try:
     
