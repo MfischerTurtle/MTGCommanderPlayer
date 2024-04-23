@@ -268,9 +268,7 @@ const paginate = (pageNumber) => {
     return null; // If user is not logged in, don't render the buttons
   };
 
-
   return (
-    
     <div className="container mt-5">
       <h4>Search by Name</h4>
       <div className="mb-3">
@@ -436,18 +434,15 @@ const paginate = (pageNumber) => {
   placeholder="Enter rule text..."
 />
 
-
-  
-        <button className="btn btn-primary mt-2 me-2" onClick={handleSearch}>
-          Search
-        </button>
-        <button className="btn btn-secondary mt-2" onClick={clearAllTypes}>
-          Clear All Types
-        </button>
-
-        <button className="btn btn-warning mt-2" onClick={clearAll}>
-        Clear All
-        </button>
+<button className="btn btn-primary mt-2 me-2" onClick={handleSearch}>
+ Search
+</button>
+<button className="btn btn-secondary mt-2" onClick={clearAllTypes}>
+ Clear All Types
+ </button>
+<button className="btn btn-warning mt-2" onClick={clearAll}>
+Clear All
+</button>
       </div>
       <div className="card-rows d-flex flex-row flex-wrap">
   {currentCards.map((card) => (

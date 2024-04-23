@@ -28,8 +28,6 @@ const Profile = () => {
     console.error('Error fetching user info:', error);
   }
 };
-
-
     fetchUserInfo();
   }, [username]);
 
@@ -41,8 +39,6 @@ const Profile = () => {
       console.error('Error updating bio:', error);
     }
   };
-
- 
 
   const handleSocialMediaChange = (event) => {
     const { name, value } = event.target;

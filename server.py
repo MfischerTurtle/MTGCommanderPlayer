@@ -10,20 +10,23 @@ import os
 
 
 
-load_dotenv()  # Load environment variables from .env file
+load_dotenv() 
 
 app = Flask(__name__)
 CORS(app)
 
 
-# Determine MongoDB URI based on the environment
+
+print("FLASK_ENV:", os.environ.get('FLASK_ENV'))
 if os.environ.get('FLASK_ENV') == 'development':
-    mongodb_uri = os.environ.get('MONGODB_URI')  # Use the MongoDB URI from the .env file
+    mongodb_uri = os.environ.get('MONGODB_URI')
+    print("Using MongoDB URI:", mongodb_uri)
 else:
-    mongodb_uri = os.environ.get('APTIBLE_MONGODB_URI')  # Connect to local MongoDB instance
+    mongodb_uri = os.environ.get('APTIBLE_MONGODB_URI')
+    print("Using Aptible MongoDB URI:", mongodb_uri)
 
 try:
-    # Connect to MongoDB using the determined URI
+    
     client = MongoClient(mongodb_uri)
     db = client[os.environ.get('DATABASE_NAME')]
     users_collection = db['users']
@@ -56,7 +59,7 @@ def url_constructor(order=None, q=None, color=None, cmc=None, types=None, creatu
 
 
 def generate_token(username):
-    # Define token expiration time (e.g., 1 hour from now)
+  
     expiration_time = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)
     payload = {
         'username': username,
@@ -165,16 +168,16 @@ def get_spell_types():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
-# Endpoint for searching cards using Scryfall API
+
 @app.route('/search', methods=['GET'])
 def search_cards():
     print('Received search request')
-    query = request.args.get('q', default='')  # Make query parameter optional
+    query = request.args.get('q', default='')  
     colors = request.args.get('colors')
-    creature_types = request.args.getlist('creature_types')  # Get list of creature types
-    rule_text = request.args.get('rule_text')  # Get the rule text query parameter
+    creature_types = request.args.getlist('creature_types') 
+    rule_text = request.args.get('rule_text')  
 
-    if not query and not colors and not creature_types and not rule_text:  # If none of the parameters provided
+    if not query and not colors and not creature_types and not rule_text:
         return jsonify({'error': 'At least one of q, colors, creature_types, or rule_text are required'}), 400
 
     try:
@@ -188,7 +191,6 @@ def search_cards():
         return jsonify({'error': str(e)}), 500
     
 
-# Endpoint for user registration
 @app.route('/register', methods=['POST'])
 def register_user():
     data = request.json
@@ -282,15 +284,15 @@ def get_user_profile(username):
     try:
         user = users_collection.find_one({'username': username})
         if user:
-            # Construct the user profile data
+            
             user_profile = {
-                '_id': str(user['_id']),  # Convert ObjectId to string
+                '_id': str(user['_id']),
                 'username': user['username'],
-                'email': user.get('email', ''),  # Optional field
-                'bio': user.get('bio', ''),  # Optional field
+                'email': user.get('email', ''), 
+                'bio': user.get('bio', ''),
                 'decks': user.get('decks', []),
                 'password': user['password'],
-                'profile_picture': user.get('profile_picture', ''),  # Optional field
+                'profile_picture': user.get('profile_picture', ''), 
                 'social_media': user.get('social_media', {}),
                 'trade_cards': user.get('trade_cards', []),
                 'wishlist': user.get('wishlist', [])
@@ -301,7 +303,7 @@ def get_user_profile(username):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
-@app.route('/user/deck', methods=['POST'])
+@app.route('/user/deck', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def add_deck():
     data = request.json
     username = data.get('username')
@@ -316,7 +318,7 @@ def add_deck():
     else:
         return jsonify({'error': 'Username and deck name are required'}), 400
 
-# Endpoint for managing wishlist
+
 @app.route('/user/wishlist', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def manage_wishlist():
     if request.method == 'GET':
@@ -340,10 +342,6 @@ def manage_wishlist():
         else:
             return jsonify({'error': 'Username and card info are required'}), 400
         
-
-    # Add handling for PUT and DELETE requests similarly
-
-# Endpoint for managing trade cards (similar to wishlist)
 
 if __name__ == '__main__':
     app.run(debug=True)

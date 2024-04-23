@@ -21,12 +21,12 @@ const Header = () => {
 
   const checkLoginStatus = async () => {
     try {
-      const token = sessionStorage.getItem('token'); // Retrieve the token from session storage
-      console.log('Retrieved token:', token); // Log the retrieved token
+      const token = sessionStorage.getItem('token'); 
+      console.log('Retrieved token:', token); 
   
       const response = await axios.get(`${BASE_URL}/check-login`, {
         headers: {
-          Authorization: `Bearer ${token}`, // Include the token in the request headers
+          Authorization: `Bearer ${token}`, 
         },
       });
       
@@ -42,14 +42,12 @@ const Header = () => {
 
   const handleLogout = async () => {
     try {
-      // Make a request to the logout endpoint (if needed)
+    
       await axios.post(`${BASE_URL}/logout`);
   
-      // Clear the token from session storage
       clearTokenFromSession();
   
-      // Update the state to reflect logged out state
-      setIsLoggedIn(false); // Assuming setIsLoggedIn is a state updater function
+      setIsLoggedIn(false); 
     } catch (error) {
       console.error('Error logging out:', error);
       setErrorMessage('Error logging out');
@@ -66,18 +64,17 @@ const Header = () => {
         username: username,
         password: password
       });
-      console.log('Login response:', response); // Log the response object
+      console.log('Login response:', response); 
       if (response && response.data && response.data.token) {
         console.log('Login successful'); 
         setIsLoggedIn(true); 
         setShowModal(false); 
-        storeTokenInSession(response.data.token); // Store the token in session storage
-        console.log('Token stored in session:', response.data.token); // Log the token
-        // Redirect to profile page with the username
+        storeTokenInSession(response.data.token);
+        console.log('Token stored in session:', response.data.token); 
         window.location.href = `/profile/${username}`;
       } else {
-        console.error('Login failed:', response); // Log the response if it doesn't contain the expected data
-        setErrorMessage('Login failed. Please try again.'); // Set a generic error message
+        console.error('Login failed:', response); 
+        setErrorMessage('Login failed. Please try again.'); 
       }
     } catch (error) {
       console.error('Error logging in:', error);
@@ -85,7 +82,6 @@ const Header = () => {
     }
   };
   
-
   return (
     <header>
       <nav>
