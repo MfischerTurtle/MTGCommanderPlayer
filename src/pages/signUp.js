@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-let BASE_URL = process.env.APTIBLE_MONGODB_URI; 
+let BASE_URL;
 
 if (process.env.NODE_ENV === 'development') {
- 
-BASE_URL = process.env.REACT_APP_BASE_URL;
-  
-}; 
+  BASE_URL = process.env.REACT_APP_BASE_URL;
+} else {
+  BASE_URL = process.env.APTIBLE_APP_BASE_URL;
+}
+
 const Register = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
