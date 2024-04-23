@@ -9,7 +9,7 @@ let BASE_URL = process.env.REACT_APP_BASE_URL;
 if (process.env.NODE_ENV === 'development') {
   BASE_URL = process.env.REACT_APP_BASE_URL;
 } else {
-  BASE_URL = process.env.APTIBLE_APP_BASE_URL;
+  BASE_URL = process.env.APTIBLE_MONGODB_URI;
 }
 
 const Header = () => {
@@ -81,7 +81,7 @@ const Header = () => {
       setErrorMessage(error.response.data.error);
     }
   };
-  
+
   return (
     <header>
       <nav>
